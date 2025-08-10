@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CurrencyConverter" xmlns:fa="http://schemas.fontawesome.io/icons/"
         mc:Ignorable="d"
-        Title="Currency Converter" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterScreen" >
+        Title="Currency Converter" SizeToContent="WidthAndHeight" MinHeight="400" MinWidth="1000" WindowStartupLocation="CenterScreen" >
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="60"/>
