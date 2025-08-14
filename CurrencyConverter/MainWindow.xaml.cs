@@ -65,11 +65,11 @@ namespace CurrencyConverter
             sqlConnection.Close();
 
             cmbFromCurrency.DisplayMemberPath = "CurrencyName";
-            cmbFromCurrency.SelectedValue = "Id";
+            cmbFromCurrency.SelectedValuePath = "Id";  
             cmbFromCurrency.SelectedIndex = 0;
 
             cmbToCurrency.DisplayMemberPath = "CurrencyName";
-            cmbToCurrency.SelectedValue = "Id";
+            cmbToCurrency.SelectedValuePath = "Id";    
             cmbToCurrency.SelectedIndex = 0;
 
 
@@ -100,7 +100,30 @@ namespace CurrencyConverter
                 return;
             }
 
-            if(cmbFromCurrency.SelectedValue==cmbToCurrency.SelectedValue)
+            myConnection();
+            string queryf = "Select Amount from Currency_Master where Id=@Id";
+            sqlCommand =new SqlCommand(queryf,sqlConnection);
+            sqlCommand.Parameters.AddWithValue("@id",int.Parse(cmbFromCurrency.SelectedValue.ToString()));
+            object resultFrom = sqlCommand.ExecuteScalar();
+            double amountFrom = 0;
+            if (resultFrom != null && resultFrom != DBNull.Value)
+            {
+                amountFrom = (Double)resultFrom;
+            }
+
+            string queryt = "Select Amount from Currency_Master where Id=@Id";
+            sqlCommand = new SqlCommand(queryf, sqlConnection);
+            sqlCommand.Parameters.AddWithValue("@id", int.Parse(cmbToCurrency.SelectedValue.ToString()));
+            object resultTo = sqlCommand.ExecuteScalar();
+            double amountTo = 0;
+            if (resultTo != null && resultTo != DBNull.Value)
+            {
+                amountTo = (Double)resultTo;
+            }
+
+            sqlConnection.Close();
+
+            if (cmbFromCurrency.SelectedValue==cmbToCurrency.SelectedValue)
             {
                 ConvertedValue = double.Parse(txtCurrency.Text);
 
@@ -108,8 +131,10 @@ namespace CurrencyConverter
             }
             else
             {
-                ConvertedValue = (double.Parse(txtCurrency.Text)
-                    *double.Parse(cmbFromCurrency.SelectedValue.ToString()))/double.Parse(cmbToCurrency.SelectedValue.ToString());
+               
+
+
+                ConvertedValue = (double.Parse(txtCurrency.Text) * amountFrom) / amountTo;
                 lblCurrency.Content = cmbToCurrency.Text + " " + ConvertedValue.ToString("N3");
 
 
@@ -252,11 +277,54 @@ namespace CurrencyConverter
         }
         private void btnCancel_Click(object sender, RoutedEventArgs e)
         {
-
+           ClearMaster();
         }
 
         private void dgvCurrency_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
+            try
+            {
+                DataGrid dataGrid =(DataGrid) sender;
+                DataRowView selectedRow = dataGrid.CurrentItem as DataRowView;
+                if (selectedRow != null){
+                    if (dataGrid.SelectedCells.Count > 0)
+                    {
+                        if (dataGrid.Items.Count > 0)
+                        {
+                            CurrencyId = int.Parse(selectedRow["Id"].ToString());
+                            if (dataGrid.SelectedCells[0].Column.DisplayIndex == 0)  //edit 
+                            {
+                                txtAmount.Text = selectedRow["Amount"].ToString();
+                                txtCurrencyName.Text = selectedRow["CurrencyName"].ToString();
+                                btnSave.Content = "Update";
+                               
+                            }
+                            else if (dataGrid.SelectedCells[0].Column.DisplayIndex == 1)  //save
+                            {
+                                if (MessageBox.Show("Are you sure you want to delete ?", "Information", MessageBoxButton.YesNo, MessageBoxImage.Question) == 
+                                    MessageBoxResult.Yes)
+                                    myConnection();
+                                string query = "Delete from Currency_Master where  Id=@Id";
+                                sqlCommand = new SqlCommand(query, sqlConnection);
+                                sqlCommand.Parameters.AddWithValue("Id", CurrencyId);
+                                sqlCommand.ExecuteNonQuery();
+
+                                MessageBox.Show("Data deleted successfully", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                                ClearMaster();
+                            }
+                        }
+                    }
+                }
+              
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+            finally
+            {
+                sqlConnection.Close();
+            }
 
         }
     }
