@@ -28,11 +28,13 @@ namespace CurrencyConverter
         SqlConnection sqlConnection;
         SqlCommand sqlCommand;
         SqlDataAdapter sqlDataAdapter;
+
+        private int CurrencyId = 0;
         public MainWindow()
         {
             InitializeComponent();
             BindCurrency();
-           
+            GetData();
         }
 
         public void myConnection()
@@ -54,10 +56,10 @@ namespace CurrencyConverter
             DataRow newRow = dtCurrency.NewRow();
             newRow["Id"] = 0;
             newRow["CurrencyName"] = "--SELECT--";
-            dtCurrency.Rows.Add(newRow,0);
+            dtCurrency.Rows.InsertAt(newRow,0);
 
             if (dtCurrency != null && dtCurrency.Rows.Count > 0) { 
-               cmbFromCurrency.ItemsSource= dtCurrency.DefaultView;
+                cmbFromCurrency.ItemsSource= dtCurrency.DefaultView;
                 cmbToCurrency.ItemsSource= dtCurrency.DefaultView;
             }
             sqlConnection.Close();
@@ -139,9 +141,115 @@ namespace CurrencyConverter
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                if (txtAmount.Text == null || txtAmount.Text.Trim() == "")
+                {
+                    MessageBox.Show("Please enter amount", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                    txtAmount.Focus();
+                    return;
+                }
+                else if (txtCurrencyName.Text == null || txtCurrencyName.Text.Trim() == "")
+                {
+                    MessageBox.Show("Please enter currency name", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                    txtCurrency.Focus();
+                    return;
+                }
 
+               
+
+                if (CurrencyId>0)    //Upadte
+                {
+                    if (MessageBox.Show("Are you sure you want to update ?", "Information", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                    {
+                        myConnection();
+                        string query = "Update Currency_Master set Amount=@Amount ,CurrencyName=@CurrencyName " +
+                            "where Id=@Id";
+                        sqlCommand=new SqlCommand(query,sqlConnection);
+                        sqlCommand.Parameters.AddWithValue("@Id",CurrencyId);
+                        sqlCommand.Parameters.AddWithValue("@Amount", txtAmount.Text);
+                        sqlCommand.Parameters.AddWithValue("@CurrencyName", txtCurrencyName.Text);
+                        sqlCommand.ExecuteNonQuery();
+
+                        MessageBox.Show("Data Updated successfully", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    }
+
+                }
+                else {                       //Save
+                    if (MessageBox.Show("Are you sure you want to Save ?", "Information", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                    {
+                        myConnection();
+                        string query = "Insert into Currency_Master values(@Amount,@CurrencyName)";
+                        sqlCommand = new SqlCommand(query, sqlConnection);
+                        sqlCommand.Parameters.AddWithValue("@Amount", txtAmount.Text);
+                        sqlCommand.Parameters.AddWithValue("@CurrencyName", txtCurrencyName.Text);
+                        sqlCommand.ExecuteNonQuery();
+
+                        MessageBox.Show("Data saved successfully", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    ClearMaster();
+                }
+                
+
+            }
+            catch (Exception ex) {
+                MessageBox.Show(ex.ToString());
+            }
+            finally
+            {
+                sqlConnection.Close();
+            }
         }
 
+        private void ClearMaster()
+        {
+            try
+            {
+                txtAmount.Text = String.Empty;
+                txtCurrencyName.Text = String.Empty;
+                btnSave.Content = "Save";
+                GetData();
+                CurrencyId = 0;  ////
+                BindCurrency();
+                txtAmount.Focus();
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        private void GetData()
+        {
+            try
+            {
+                myConnection();
+                string query = "select * from Currency_Master";
+                sqlCommand =new SqlCommand(query, sqlConnection);
+                sqlDataAdapter = new SqlDataAdapter(sqlCommand);
+                DataTable dt = new DataTable();
+                sqlDataAdapter.Fill(dt);
+
+                if(dt!=null && dt.Rows.Count > 0)
+                {
+                    dgvCurrency.ItemsSource=dt.DefaultView;
+                }
+                else
+                {
+                   dgvCurrency.ItemsSource = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+            finally
+            {
+                sqlConnection.Close();
+            }
+        }
         private void btnCancel_Click(object sender, RoutedEventArgs e)
         {
 
